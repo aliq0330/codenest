@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Bell, MessageSquare, X } from "lucide-react";
+import { Search, Bell, MessageSquare, X, Menu } from "lucide-react";
 import { useUIStore } from "@/store/ui.store";
 import { cn } from "@/lib/utils";
 
@@ -8,7 +8,7 @@ export function Header() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const navigate = useNavigate();
-  const { notificationCount, messageCount } = useUIStore();
+  const { notificationCount, messageCount, toggleSidebar } = useUIStore();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,7 +16,16 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-[#2e2e2e] bg-[#111111]/80 px-4 backdrop-blur-sm">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[#2e2e2e] bg-[#111111]/80 px-4 backdrop-blur-sm">
+      {/* Burger button */}
+      <button
+        onClick={toggleSidebar}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#6b6b6b] transition-colors hover:bg-[#1a1a1a] hover:text-[#f5f5f5]"
+        aria-label="Toggle menu"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
       <form onSubmit={handleSearch} className="relative flex flex-1 max-w-md items-center">
         <Search className="absolute left-3 h-4 w-4 text-[#6b6b6b] pointer-events-none" />
         <input

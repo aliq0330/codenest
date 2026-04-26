@@ -11,7 +11,9 @@ interface AppShellProps {
 export function AppShell({ rightPanel = true, fullWidth = false }: AppShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0a0a]">
+      {/* Sidebar: fixed overlay drawer, outside layout flow */}
       <Sidebar />
+
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
         <div className="flex flex-1 overflow-hidden">

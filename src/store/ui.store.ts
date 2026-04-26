@@ -1,23 +1,23 @@
 import { create } from "zustand";
 
 interface UIStore {
-  sidebarCollapsed: boolean;
+  sidebarOpen: boolean;
   notificationCount: number;
   messageCount: number;
 
-  setSidebarCollapsed: (v: boolean) => void;
+  setSidebarOpen: (v: boolean) => void;
   toggleSidebar: () => void;
   setNotificationCount: (n: number) => void;
   setMessageCount: (n: number) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
-  sidebarCollapsed: false,
+  sidebarOpen: false,
   notificationCount: 0,
   messageCount: 0,
 
-  setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
-  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
+  toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   setNotificationCount: (notificationCount) => set({ notificationCount }),
   setMessageCount: (messageCount) => set({ messageCount }),
 }));
