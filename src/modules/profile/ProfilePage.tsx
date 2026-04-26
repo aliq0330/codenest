@@ -24,6 +24,7 @@ import { cn, formatNumber, formatRelativeTime } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { profilesService } from "@/services/profiles.service";
 import { postsService } from "@/services/posts.service";
+import { useT } from "@/lib/i18n";
 import type { User, Post } from "@/types";
 
 export function ProfilePage({ username: usernameProp }: { username?: string }) {
@@ -34,6 +35,7 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
   const { profile: currentUser } = useAuthStore();
   const isOwnProfile =
     username === "me" || (!!currentUser && currentUser.username === username);
+  const t = useT();
 
   const [profile, setProfile] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -108,7 +110,7 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
   if (!profile) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-[#0a0a0a]">
-        <p className="text-sm text-[#6b6b6b]">Profile not found.</p>
+        <p className="text-sm text-[#6b6b6b]">{t.profile.notFound}</p>
       </div>
     );
   }
@@ -139,7 +141,7 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
                 onClick={() => navigate("/settings")}
                 className="rounded-lg border border-[#2e2e2e] bg-[#111111] px-4 py-1.5 text-sm font-medium text-[#f5f5f5] transition-colors hover:border-[#6b6b6b]"
               >
-                Edit Profile
+                {t.profile.editProfile}
               </button>
             ) : (
               <button
@@ -152,7 +154,7 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
                     : "bg-[#f5f5f5] text-[#0a0a0a] hover:bg-white"
                 )}
               >
-                {isFollowing ? "Following" : "Follow"}
+                {isFollowing ? t.profile.following : t.profile.follow}
               </button>
             )}
           </div>
@@ -214,7 +216,7 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
             <span className="font-semibold text-[#f5f5f5]">
               {formatNumber(profile.followers_count)}
             </span>
-            <span>Followers</span>
+            <span>{t.profile.followers}</span>
           </button>
           <button
             onClick={() => {}}
@@ -223,7 +225,7 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
             <span className="font-semibold text-[#f5f5f5]">
               {formatNumber(profile.following_count)}
             </span>
-            <span>Following</span>
+            <span>{t.profile.following}</span>
           </button>
         </div>
 
@@ -231,12 +233,12 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
         <Tabs defaultTab="posts">
           <TabList>
             <Tab value="posts" count={snippetPosts.length}>
-              Posts
+              {t.profile.posts}
             </Tab>
-            <Tab value="collections">Collections</Tab>
-            <Tab value="likes">Likes</Tab>
+            <Tab value="collections">{t.profile.collections}</Tab>
+            <Tab value="likes">{t.profile.likes}</Tab>
             <Tab value="articles" count={articlePosts.length}>
-              Articles
+              {t.profile.articles}
             </Tab>
           </TabList>
 
@@ -244,7 +246,7 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
           <TabPanel value="posts" className="py-4 space-y-1">
             {snippetPosts.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-16 text-center">
-                <p className="text-sm text-[#6b6b6b]">No posts yet.</p>
+                <p className="text-sm text-[#6b6b6b]">{t.profile.noPosts}</p>
               </div>
             ) : (
               snippetPosts.map((post) => (
@@ -290,8 +292,8 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#111111]">
                 <Lock className="h-6 w-6 text-[#3d3d3d]" />
               </div>
-              <p className="text-sm text-[#6b6b6b]">Collections coming soon</p>
-              <Badge variant="warning">Coming soon</Badge>
+              <p className="text-sm text-[#6b6b6b]">{t.profile.collectionsComingSoon}</p>
+              <Badge variant="warning">{t.profile.comingSoon}</Badge>
             </div>
           </TabPanel>
 
@@ -301,8 +303,8 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#111111]">
                 <Heart className="h-6 w-6 text-[#3d3d3d]" />
               </div>
-              <p className="text-sm text-[#6b6b6b]">Liked posts will appear here</p>
-              <Badge variant="warning">Coming soon</Badge>
+              <p className="text-sm text-[#6b6b6b]">{t.profile.likesComingSoon}</p>
+              <Badge variant="warning">{t.profile.comingSoon}</Badge>
             </div>
           </TabPanel>
 
@@ -310,7 +312,7 @@ export function ProfilePage({ username: usernameProp }: { username?: string }) {
           <TabPanel value="articles" className="py-4 space-y-3">
             {articlePosts.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-16 text-center">
-                <p className="text-sm text-[#6b6b6b]">No articles yet.</p>
+                <p className="text-sm text-[#6b6b6b]">{t.profile.noArticles}</p>
               </div>
             ) : (
               articlePosts.map((post) => (

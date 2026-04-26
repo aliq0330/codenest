@@ -7,31 +7,31 @@ import {
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store/ui.store";
 import { useAuthStore } from "@/store/auth.store";
+import { useT } from "@/lib/i18n";
 import { Avatar } from "@/components/ui/Avatar";
-
-const NAV = [
-  { icon: Home,          label: "Home",          to: "/feed" },
-  { icon: Compass,       label: "Explore",       to: "/explore" },
-  { icon: Star,          label: "Featured",      to: "/featured" },
-  { icon: Hash,          label: "Tags",          to: "/tags" },
-  { icon: Bell,          label: "Notifications", to: "/notifications" },
-  { icon: MessageSquare, label: "Messages",      to: "/messages" },
-  { icon: Bookmark,      label: "Collections",   to: "/collections" },
-  { icon: User,          label: "Profile",       to: "/profile" },
-  { icon: Settings,      label: "Settings",      to: "/settings" },
-];
 
 export function Sidebar() {
   const { sidebarOpen, setSidebarOpen } = useUIStore();
   const { profile } = useAuthStore();
   const location = useLocation();
+  const t = useT();
 
-  // Sayfa değişince menüyü kapat
+  const NAV = [
+    { icon: Home,          label: t.nav.home,          to: "/feed" },
+    { icon: Compass,       label: t.nav.explore,       to: "/explore" },
+    { icon: Star,          label: t.nav.featured,      to: "/featured" },
+    { icon: Hash,          label: t.nav.tags,          to: "/tags" },
+    { icon: Bell,          label: t.nav.notifications, to: "/notifications" },
+    { icon: MessageSquare, label: t.nav.messages,      to: "/messages" },
+    { icon: Bookmark,      label: t.nav.collections,   to: "/collections" },
+    { icon: User,          label: t.nav.profile,       to: "/profile" },
+    { icon: Settings,      label: t.nav.settings,      to: "/settings" },
+  ];
+
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname, setSidebarOpen]);
 
-  // ESC tuşuyla kapat
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setSidebarOpen(false);
@@ -103,7 +103,7 @@ export function Sidebar() {
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#f5f5f5] px-4 py-2.5 text-sm font-semibold text-[#0a0a0a] transition-opacity hover:opacity-90"
           >
             <PenSquare className="h-4 w-4 shrink-0" />
-            New Post
+            {t.nav.newPost}
           </NavLink>
         </div>
 

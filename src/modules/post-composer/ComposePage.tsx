@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { postsService } from "@/services/posts.service";
 import { useAuthStore } from "@/store/auth.store";
+import { useT } from "@/lib/i18n";
 import type { PostType as ApiPostType } from "@/types";
 
 type PostType = "snippet" | "project" | "article" | "thought";
@@ -25,6 +26,7 @@ interface CodeBlock {
 export function ComposePage() {
   const navigate = useNavigate();
   const { profile: currentUser } = useAuthStore();
+  const t = useT();
   const [postType, setPostType] = useState<PostType>("snippet");
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
@@ -127,10 +129,10 @@ export function ComposePage() {
   };
 
   const TYPE_TABS: { type: PostType; label: string; icon: React.ReactNode }[] = [
-    { type: "snippet", label: "Snippet", icon: <Code2 className="h-3.5 w-3.5" /> },
-    { type: "thought", label: "Thought", icon: <FileText className="h-3.5 w-3.5" /> },
-    { type: "project", label: "Project", icon: <Image className="h-3.5 w-3.5" /> },
-    { type: "article", label: "Article", icon: <FileText className="h-3.5 w-3.5" /> },
+    { type: "snippet", label: t.compose.snippet, icon: <Code2 className="h-3.5 w-3.5" /> },
+    { type: "thought", label: t.compose.thought, icon: <FileText className="h-3.5 w-3.5" /> },
+    { type: "project", label: t.compose.project, icon: <Image className="h-3.5 w-3.5" /> },
+    { type: "article", label: t.compose.article, icon: <FileText className="h-3.5 w-3.5" /> },
   ];
 
   return (
@@ -143,9 +145,9 @@ export function ComposePage() {
         >
           <X className="h-4 w-4" />
         </button>
-        <span className="text-sm font-semibold text-[#f5f5f5]">New Post</span>
+        <span className="text-sm font-semibold text-[#f5f5f5]">{t.compose.title}</span>
         <Button variant="primary" size="sm" onClick={handleSubmit} disabled={!canSubmit() || publishing}>
-          {publishing ? "Publishing…" : "Publish"}
+          {publishing ? t.compose.publishing : t.compose.publish}
         </Button>
       </div>
 
@@ -334,10 +336,10 @@ export function ComposePage() {
       <div className="flex items-center justify-between border-t border-[#2e2e2e] bg-[#0a0a0a] px-4 py-3">
         <div className="flex items-center gap-2 text-xs text-[#6b6b6b]">
           <span className="h-2 w-2 rounded-full bg-green-500" />
-          <span>Publishing as @{currentUser?.username ?? "you"}</span>
+          <span>{t.compose.publishingAs(currentUser?.username ?? "siz")}</span>
         </div>
         <Button variant="primary" size="sm" onClick={handleSubmit} disabled={!canSubmit() || publishing}>
-          {publishing ? "Publishing…" : "Publish"}
+          {publishing ? t.compose.publishing : t.compose.publish}
         </Button>
       </div>
     </div>

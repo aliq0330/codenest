@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabList, Tab, FeedSkeleton } from "@/components/ui";
 import { PostCard } from "@/modules/post/PostCard";
 import { postsService } from "@/services/posts.service";
+import { useT } from "@/lib/i18n";
 import type { Post, FeedTab } from "@/types";
 
 const FILTERS = ["All", "React", "TypeScript", "CSS", "Algorithms", "HTML", "Vue"];
 
 export function FeedPage() {
+  const t = useT();
   const [feedTab, setFeedTab] = useState<FeedTab>("suggested");
   const [activeFilter, setActiveFilter] = useState("All");
   const [posts, setPosts] = useState<Post[]>([]);
@@ -59,13 +61,13 @@ export function FeedPage() {
       {/* Sticky header */}
       <div className="sticky top-0 z-10 border-b border-[#2e2e2e] bg-[#0a0a0a]/90 backdrop-blur-sm">
         <div className="px-4 pt-3 pb-0">
-          <h1 className="text-lg font-bold text-[#f5f5f5]">Home</h1>
+          <h1 className="text-lg font-bold text-[#f5f5f5]">{t.feed.title}</h1>
         </div>
-        <Tabs defaultTab="suggested" onChange={(t) => setFeedTab(t as FeedTab)}>
+        <Tabs defaultTab="suggested" onChange={(tab) => setFeedTab(tab as FeedTab)}>
           <TabList className="px-2">
-            <Tab value="following">Following</Tab>
-            <Tab value="suggested">Suggested</Tab>
-            <Tab value="trending">Trending</Tab>
+            <Tab value="following">{t.feed.following}</Tab>
+            <Tab value="suggested">{t.feed.suggested}</Tab>
+            <Tab value="trending">{t.feed.trending}</Tab>
           </TabList>
         </Tabs>
         {/* Tag filters */}
@@ -94,10 +96,10 @@ export function FeedPage() {
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <p className="text-sm text-[#6b6b6b]">
               {activeFilter !== "All"
-                ? `No posts found for "${activeFilter}".`
+                ? t.feed.noPostsFilter(activeFilter)
                 : feedTab === "following"
-                ? "Follow some users to see their posts here."
-                : "No posts yet. Be the first to share something!"}
+                ? t.feed.noPostsFollowing
+                : t.feed.noPostsSuggested}
             </p>
           </div>
         ) : (
@@ -118,7 +120,7 @@ export function FeedPage() {
                   disabled={loadingMore}
                   className="rounded-lg border border-[#2e2e2e] bg-[#111111] px-4 py-2 text-sm text-[#6b6b6b] transition-colors hover:border-[#6b6b6b] hover:text-[#a3a3a3] disabled:opacity-40"
                 >
-                  {loadingMore ? "Loading…" : "Load more"}
+                  {loadingMore ? t.feed.loading : t.feed.loadMore}
                 </button>
               </div>
             )}
