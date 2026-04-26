@@ -1,20 +1,8 @@
-"use client";
-
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title?: string;
-  description?: string;
-  children: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl" | "full";
-  className?: string;
-}
-
-const sizeClasses = {
+const sizes = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-lg",
@@ -22,63 +10,62 @@ const sizeClasses = {
   full: "max-w-5xl",
 };
 
-export function Modal({ isOpen, onClose, title, description, children, size = "md", className }: ModalProps) {
+interface ModalProps {
+  open: boolean;
+  onClose: () => void;
+  title?: string;
+  description?: string;
+  children: React.ReactNode;
+  size?: keyof typeof sizes;
+  className?: string;
+}
+
+export function Modal({ open, onClose, title, description, children, size = "md", className }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", handler);
     document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", handler);
       document.body.style.overflow = "";
     };
-  }, [isOpen, onClose]);
+  }, [open, onClose]);
 
-  if (!isOpen) return null;
+  if (!open) return null;
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-modal flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={(e) => e.target === overlayRef.current && onClose()}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-canvas/80 backdrop-blur-sm" />
-
-      {/* Dialog */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
         role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? "modal-title" : undefined}
+        aria-modal
         className={cn(
-          "relative z-10 w-full rounded-2xl border border-surface-border bg-canvas-secondary shadow-surface-xl animate-scale-in",
-          sizeClasses[size],
+          "relative z-10 w-full rounded-2xl border border-[#2e2e2e] bg-[#111111] shadow-2xl animate-scale-in",
+          sizes[size],
           className
         )}
       >
-        {/* Header */}
         {title && (
-          <div className="flex items-start justify-between border-b border-surface-border px-6 py-4">
+          <div className="flex items-start justify-between border-b border-[#2e2e2e] px-6 py-4">
             <div>
-              <h2 id="modal-title" className="text-base font-semibold text-ink-primary">
-                {title}
-              </h2>
-              {description && (
-                <p className="mt-0.5 text-sm text-ink-tertiary">{description}</p>
-              )}
+              <h2 className="text-base font-semibold text-[#f5f5f5]">{title}</h2>
+              {description && <p className="mt-0.5 text-sm text-[#6b6b6b]">{description}</p>}
             </div>
             <button
               onClick={onClose}
-              className="ml-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-ink-tertiary transition-colors hover:bg-surface hover:text-ink-primary"
+              className="ml-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#6b6b6b] transition-colors hover:bg-[#1a1a1a] hover:text-[#f5f5f5]"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
         )}
-
-        {/* Body */}
         <div className="p-6">{children}</div>
       </div>
     </div>

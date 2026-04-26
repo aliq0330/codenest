@@ -1,72 +1,49 @@
 import { cn } from "@/lib/utils";
 
-type BadgeVariant = "default" | "success" | "warning" | "error" | "info" | "outline";
+type Variant = "default" | "success" | "warning" | "error" | "info";
 
-interface BadgeProps {
-  variant?: BadgeVariant;
-  children: React.ReactNode;
-  className?: string;
-}
-
-const variantClasses: Record<BadgeVariant, string> = {
-  default: "bg-surface text-ink-secondary border border-surface-border",
-  success: "bg-semantic-success/10 text-semantic-success border border-semantic-success/20",
-  warning: "bg-semantic-warning/10 text-semantic-warning border border-semantic-warning/20",
-  error: "bg-semantic-error/10 text-semantic-error border border-semantic-error/20",
-  info: "bg-semantic-info/10 text-semantic-info border border-semantic-info/20",
-  outline: "text-ink-secondary border border-surface-border",
+const variants: Record<Variant, string> = {
+  default: "bg-[#1a1a1a] text-[#a3a3a3] border border-[#2e2e2e]",
+  success: "bg-green-500/10 text-green-400 border border-green-500/20",
+  warning: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
+  error:   "bg-red-500/10 text-red-400 border border-red-500/20",
+  info:    "bg-blue-500/10 text-blue-400 border border-blue-500/20",
 };
 
-export function Badge({ variant = "default", children, className }: BadgeProps) {
+export function Badge({ variant = "default", children, className }: {
+  variant?: Variant;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium",
-        variantClasses[variant],
-        className
-      )}
-    >
+    <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium", variants[variant], className)}>
       {children}
     </span>
   );
 }
 
-interface TagPillProps {
+export function TagPill({ label, href, onRemove, className }: {
   label: string;
   href?: string;
   onRemove?: () => void;
   className?: string;
-}
-
-export function TagPill({ label, href, onRemove, className }: TagPillProps) {
+}) {
   const base = cn(
-    "inline-flex items-center gap-1 rounded-full border border-surface-border bg-surface px-2.5 py-0.5 text-xs font-medium text-ink-secondary transition-colors hover:border-ink-tertiary hover:text-ink-primary",
+    "inline-flex items-center gap-1 rounded-full border border-[#2e2e2e] bg-[#1a1a1a]",
+    "px-2.5 py-0.5 text-xs font-medium text-[#a3a3a3]",
+    "transition-colors hover:border-[#6b6b6b] hover:text-[#f5f5f5]",
     className
   );
-
-  const content = (
+  const inner = (
     <>
-      <span className="text-ink-tertiary">#</span>
+      <span className="text-[#6b6b6b]">#</span>
       {label}
       {onRemove && (
-        <button
-          onClick={onRemove}
-          className="ml-0.5 text-ink-disabled hover:text-ink-tertiary"
-          type="button"
-        >
-          ×
-        </button>
+        <button onClick={onRemove} type="button" className="ml-0.5 text-[#3d3d3d] hover:text-[#a3a3a3]">×</button>
       )}
     </>
   );
-
-  if (href) {
-    return (
-      <a href={href} className={base}>
-        {content}
-      </a>
-    );
-  }
-
-  return <span className={base}>{content}</span>;
+  return href
+    ? <a href={href} className={base}>{inner}</a>
+    : <span className={base}>{inner}</span>;
 }

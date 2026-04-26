@@ -11,7 +11,7 @@ export function formatNumber(n: number): string {
   return String(n);
 }
 
-export function formatRelativeTime(date: Date | string): string {
+export function formatRelativeTime(date: string | Date): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const diff = (Date.now() - d.getTime()) / 1000;
   if (diff < 60) return "just now";
@@ -22,52 +22,35 @@ export function formatRelativeTime(date: Date | string): string {
 }
 
 export function slugify(str: string): string {
-  return str
-    .toLowerCase()
-    .trim()
+  return str.toLowerCase().trim()
     .replace(/[^\w\s-]/g, "")
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
 
-export function truncate(str: string, maxLength: number): string {
-  if (str.length <= maxLength) return str;
-  return str.slice(0, maxLength - 3) + "...";
+export function truncate(str: string, max: number): string {
+  return str.length <= max ? str : str.slice(0, max - 3) + "...";
 }
 
 export function extractMentions(text: string): string[] {
-  return (text.match(/@[\w]+/g) || []).map((m) => m.slice(1));
+  return (text.match(/@[\w]+/g) ?? []).map((m) => m.slice(1));
 }
 
 export function extractHashtags(text: string): string[] {
-  return (text.match(/#[\w]+/g) || []).map((h) => h.slice(1));
+  return (text.match(/#[\w]+/g) ?? []).map((h) => h.slice(1));
 }
 
-export function generateId(): string {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-
-export function getFileExtension(filename: string): string {
-  return filename.split(".").pop()?.toLowerCase() ?? "";
-}
-
-export function getLanguageFromExtension(ext: string): string {
+export function getLanguageFromFilename(filename: string): string {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
   const map: Record<string, string> = {
-    js: "javascript",
-    jsx: "javascript",
-    ts: "typescript",
-    tsx: "typescript",
-    html: "html",
-    css: "css",
-    scss: "css",
+    js: "javascript", jsx: "javascript",
+    ts: "typescript", tsx: "typescript",
+    html: "html", htm: "html",
+    css: "css", scss: "css",
     json: "json",
     md: "markdown",
-    py: "python",
-    rs: "rust",
-    go: "go",
-    sh: "shell",
   };
-  return map[ext] ?? "text";
+  return map[ext] ?? "javascript";
 }
 
 export function debounce<T extends (...args: unknown[]) => unknown>(fn: T, delay: number) {
@@ -78,6 +61,6 @@ export function debounce<T extends (...args: unknown[]) => unknown>(fn: T, delay
   };
 }
 
-export function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
+export function generateId(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }

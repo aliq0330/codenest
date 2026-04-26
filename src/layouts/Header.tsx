@@ -1,60 +1,69 @@
-"use client";
-
 import { useState } from "react";
-import Link from "next/link";
-import { Search, Bell, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Search, Bell, MessageSquare, X } from "lucide-react";
+import { useUIStore } from "@/store/ui.store";
 import { cn } from "@/lib/utils";
 
 export function Header() {
-  const [searchFocused, setSearchFocused] = useState(false);
   const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
+  const navigate = useNavigate();
+  const { notificationCount, messageCount } = useUIStore();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+  };
 
   return (
-    <header className="flex h-header shrink-0 items-center gap-4 border-b border-surface-border bg-canvas-secondary/80 px-4 backdrop-blur-sm">
-      {/* Search bar */}
-      <div
-        className={cn(
-          "relative flex flex-1 max-w-md items-center gap-2 rounded-lg border bg-surface px-3 py-2 transition-all duration-150",
-          searchFocused ? "border-ink-tertiary" : "border-surface-border"
-        )}
-      >
-        <Search className="h-4 w-4 shrink-0 text-ink-tertiary" />
+    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-[#2e2e2e] bg-[#111111]/80 px-4 backdrop-blur-sm">
+      <form onSubmit={handleSearch} className="relative flex flex-1 max-w-md items-center">
+        <Search className="absolute left-3 h-4 w-4 text-[#6b6b6b] pointer-events-none" />
         <input
-          type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setSearchFocused(true)}
-          onBlur={() => setSearchFocused(false)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder="Search posts, users, tags..."
-          className="flex-1 bg-transparent text-sm text-ink-primary placeholder:text-ink-tertiary focus:outline-none"
+          className={cn(
+            "w-full rounded-lg border bg-[#1a1a1a] py-2 pl-9 pr-8 text-sm text-[#f5f5f5]",
+            "placeholder:text-[#3d3d3d] focus:outline-none transition-colors",
+            focused ? "border-[#6b6b6b]" : "border-[#2e2e2e]"
+          )}
         />
         {query && (
-          <kbd className="hidden text-xs text-ink-disabled sm:block">ESC</kbd>
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="absolute right-2 text-[#6b6b6b] hover:text-[#f5f5f5]"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         )}
-      </div>
+      </form>
 
-      {/* Right actions */}
       <div className="flex items-center gap-1">
-        <Link
-          href="/notifications"
-          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-ink-secondary transition-colors hover:bg-surface hover:text-ink-primary"
+        <button
+          onClick={() => navigate("/notifications")}
+          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[#6b6b6b] transition-colors hover:bg-[#1a1a1a] hover:text-[#f5f5f5]"
         >
           <Bell className="h-5 w-5" />
-          {/* Unread badge */}
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-semantic-info" />
-        </Link>
+          {notificationCount > 0 && (
+            <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
+              {notificationCount > 9 ? "9+" : notificationCount}
+            </span>
+          )}
+        </button>
 
-        <Link
-          href="/messages"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-secondary transition-colors hover:bg-surface hover:text-ink-primary"
+        <button
+          onClick={() => navigate("/messages")}
+          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[#6b6b6b] transition-colors hover:bg-[#1a1a1a] hover:text-[#f5f5f5]"
         >
           <MessageSquare className="h-5 w-5" />
-        </Link>
-
-        {/* Avatar */}
-        <Link href="/profile" className="ml-1">
-          <div className="h-8 w-8 rounded-full bg-surface-hover ring-1 ring-surface-border" />
-        </Link>
+          {messageCount > 0 && (
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-blue-500" />
+          )}
+        </button>
       </div>
     </header>
   );

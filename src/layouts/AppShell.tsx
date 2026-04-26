@@ -1,36 +1,27 @@
-"use client";
-
-import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { RightPanel } from "./RightPanel";
 
 interface AppShellProps {
-  children: React.ReactNode;
-  showRightPanel?: boolean;
+  rightPanel?: boolean;
+  fullWidth?: boolean;
 }
 
-export function AppShell({ children, showRightPanel = true }: AppShellProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
+export function AppShell({ rightPanel = true, fullWidth = false }: AppShellProps) {
   return (
-    <div className="flex h-screen overflow-hidden bg-canvas">
-      {/* Left Sidebar */}
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((p) => !p)} />
-
-      {/* Main content area */}
+    <div className="flex h-screen overflow-hidden bg-[#0a0a0a]">
+      <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-
         <div className="flex flex-1 overflow-hidden">
-          {/* Center feed */}
           <main className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-2xl px-4 py-4">{children}</div>
+            <div className={fullWidth ? "h-full" : "mx-auto max-w-2xl"}>
+              <Outlet />
+            </div>
           </main>
-
-          {/* Right panel */}
-          {showRightPanel && (
-            <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-surface-border xl:block">
+          {rightPanel && (
+            <aside className="hidden w-72 shrink-0 overflow-y-auto border-l border-[#2e2e2e] xl:block">
               <RightPanel />
             </aside>
           )}
