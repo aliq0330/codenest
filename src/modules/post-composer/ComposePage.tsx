@@ -4,6 +4,9 @@ import { X, Plus, Image, Code2, FileText, ChevronDown, Hash, AtSign } from "luci
 import { Button, Input, Textarea, TagPill } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { postsService } from "@/services/posts.service";
+import { useAuthStore } from "@/store/auth.store";
+import type { PostType as ApiPostType } from "@/types";
 
 type PostType = "snippet" | "project" | "article" | "thought";
 
@@ -21,6 +24,7 @@ interface CodeBlock {
 
 export function ComposePage() {
   const navigate = useNavigate();
+  const { profile: currentUser } = useAuthStore();
   const [postType, setPostType] = useState<PostType>("snippet");
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
@@ -57,16 +61,49 @@ export function ComposePage() {
     if (codeBlocks.length > 1) setCodeBlocks((p) => p.filter((b) => b.id !== id));
   };
 
+  const [publishing, setPublishing] = useState(false);
+
   const canSubmit = () => {
+    if (publishing) return false;
     if (postType === "snippet") return codeBlocks.some((b) => b.code.trim());
     if (postType === "thought") return content.trim().length > 0;
-    return title.trim() && content.trim();
+    return title.trim().length > 0 && content.trim().length > 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit()) return;
-    toast.success("Post published!");
-    navigate("/feed");
+    setPublishing(true);
+    try {
+      const apiType: ApiPostType =
+        postType === "thought" ? "snippet" : postType;
+
+      const snippets =
+        postType === "snippet" || postType === "project"
+          ? codeBlocks
+              .filter((b) => b.code.trim())
+              .map((b) => ({ id: b.id, filename: b.filename, language: b.language, code: b.code }))
+          : [];
+
+      const primaryLanguage =
+        snippets.length > 0 ? snippets[0].language : undefined;
+
+      await postsService.createPost({
+        type: apiType,
+        title: title.trim() || undefined,
+        content: content.trim(),
+        tags,
+        language: primaryLanguage,
+        snippets,
+      });
+
+      toast.success("Post published!");
+      navigate("/feed");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to publish. Please try again.");
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const insertMention = () => {
@@ -107,8 +144,8 @@ export function ComposePage() {
           <X className="h-4 w-4" />
         </button>
         <span className="text-sm font-semibold text-[#f5f5f5]">New Post</span>
-        <Button variant="primary" size="sm" onClick={handleSubmit} disabled={!canSubmit()}>
-          Publish
+        <Button variant="primary" size="sm" onClick={handleSubmit} disabled={!canSubmit() || publishing}>
+          {publishing ? "Publishing…" : "Publish"}
         </Button>
       </div>
 
@@ -297,10 +334,10 @@ export function ComposePage() {
       <div className="flex items-center justify-between border-t border-[#2e2e2e] bg-[#0a0a0a] px-4 py-3">
         <div className="flex items-center gap-2 text-xs text-[#6b6b6b]">
           <span className="h-2 w-2 rounded-full bg-green-500" />
-          <span>Publishing as @myusername</span>
+          <span>Publishing as @{currentUser?.username ?? "you"}</span>
         </div>
-        <Button variant="primary" size="sm" onClick={handleSubmit} disabled={!canSubmit()}>
-          Publish
+        <Button variant="primary" size="sm" onClick={handleSubmit} disabled={!canSubmit() || publishing}>
+          {publishing ? "Publishing…" : "Publish"}
         </Button>
       </div>
     </div>

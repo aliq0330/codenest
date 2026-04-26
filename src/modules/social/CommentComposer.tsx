@@ -7,9 +7,10 @@ interface CommentComposerProps {
   postId: string;
   replyTo?: string;
   onSubmit?: (content: string, snippet?: string) => void;
+  externalSubmitting?: boolean;
 }
 
-export function CommentComposer({ postId: _postId, replyTo, onSubmit }: CommentComposerProps) {
+export function CommentComposer({ postId: _postId, replyTo, onSubmit, externalSubmitting }: CommentComposerProps) {
   const [content, setContent] = useState("");
   const [snippet, setSnippet] = useState("");
   const [showSnippet, setShowSnippet] = useState(false);
@@ -48,14 +49,14 @@ export function CommentComposer({ postId: _postId, replyTo, onSubmit }: CommentC
   }, [replyTo]);
 
   async function handleSubmit() {
-    if (isEmpty || submitting) return;
-    setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 400));
-    onSubmit?.(content.trim(), showSnippet && snippet.trim() ? snippet.trim() : undefined);
+    const isActive = externalSubmitting ?? submitting;
+    if (isEmpty || isActive) return;
+    if (!externalSubmitting) setSubmitting(true);
+    await onSubmit?.(content.trim(), showSnippet && snippet.trim() ? snippet.trim() : undefined);
     setContent("");
     setSnippet("");
     setShowSnippet(false);
-    setSubmitting(false);
+    if (!externalSubmitting) setSubmitting(false);
     if (textareaRef.current) {
       textareaRef.current.style.height = "40px";
     }
@@ -150,14 +151,14 @@ export function CommentComposer({ postId: _postId, replyTo, onSubmit }: CommentC
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={isEmpty || submitting}
+              disabled={isEmpty || (externalSubmitting ?? submitting)}
               className={cn(
                 "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
                 "bg-[#f5f5f5] text-[#0a0a0a] hover:opacity-90",
                 "disabled:pointer-events-none disabled:opacity-30"
               )}
             >
-              {submitting ? (
+              {(externalSubmitting ?? submitting) ? (
                 <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#0a0a0a] border-t-transparent" />
               ) : (
                 <Send className="h-3.5 w-3.5" />
