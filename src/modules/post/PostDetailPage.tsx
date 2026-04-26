@@ -47,8 +47,9 @@ export function PostDetailPage() {
       )}
 
       {error && (
-        <div className="flex items-center justify-center py-16">
-          <p className="text-sm text-[#6b6b6b]">Post not found.</p>
+        <div className="flex flex-col items-center gap-2 py-16 text-center">
+          <p className="text-sm font-medium text-[#f5f5f5]">Post bulunamadı.</p>
+          <p className="text-xs text-[#6b6b6b]">Silinmiş veya erişilemeyen bir gönderi olabilir.</p>
         </div>
       )}
 
