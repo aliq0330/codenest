@@ -2,7 +2,6 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { PostCard } from "./PostCard";
 import { CommentThread } from "@/modules/social/CommentThread";
-import { CommentComposer } from "@/modules/social/CommentComposer";
 import type { Post } from "@/types";
 
 const MOCK_POST: Post = {
@@ -46,10 +45,6 @@ export function PostDetailPage() {
       </div>
 
       <PostCard post={MOCK_POST} showConnector />
-
-      <div className="border-b border-[#2e2e2e] px-4 py-4">
-        <CommentComposer postId={id ?? "p1"} replyTo={MOCK_POST.author.username} />
-      </div>
 
       <CommentThread postId={id ?? "p1"} />
     </div>
