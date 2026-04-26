@@ -2,7 +2,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - claude/social-code-platform-2sd6y
   workflow_dispatch:
 
 permissions:
