@@ -4,14 +4,8 @@ import type { Database } from "@/types/supabase";
 // Supabase proje URL ve anon key — .env.local'dan okunur
 // VITE_SUPABASE_URL ve VITE_SUPABASE_ANON_KEY değerlerini
 // Supabase dashboard > Project Settings > API bölümünden alınız.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Missing Supabase env vars. Create .env.local with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY"
-  );
-}
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string || "https://placeholder.supabase.co";
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string || "placeholder-anon-key";
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
