@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   MapPin,
   Link as LinkIcon,
@@ -9,6 +9,7 @@ import {
   Globe,
   Lock,
   GitFork,
+  Loader2,
 } from "lucide-react";
 import {
   Avatar,
@@ -20,149 +21,115 @@ import {
   TabPanel,
 } from "@/components/ui";
 import { cn, formatNumber, formatRelativeTime } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
+import { profilesService } from "@/services/profiles.service";
+import { postsService } from "@/services/posts.service";
+import type { User, Post } from "@/types";
 
-interface MockPost {
-  id: string;
-  title: string;
-  content: string;
-  tags: string[];
-  likes: number;
-  createdAt: string;
-}
-
-interface MockCollection {
-  id: string;
-  name: string;
-  postCount: number;
-  isPublic: boolean;
-  gradient: string;
-}
-
-interface MockArticle {
-  id: string;
-  title: string;
-  subtitle: string;
-  readingTime: number;
-  createdAt: string;
-}
-
-function buildMockData(username: string) {
-  const displayName =
-    username.charAt(0).toUpperCase() + username.slice(1).replace(/[_-]/g, " ");
-
-  const posts: MockPost[] = [
-    {
-      id: "1",
-      title: "Debounce vs Throttle — practical examples",
-      content:
-        "Two patterns that look similar but solve different problems. Here's when to use each one with real code.",
-      tags: ["javascript", "performance", "patterns"],
-      likes: 412,
-      createdAt: new Date(Date.now() - 1000 * 60 * 47).toISOString(),
-    },
-    {
-      id: "2",
-      title: "CSS Grid auto-fill vs auto-fit explained",
-      content:
-        "These two keywords behave identically until you have fewer items than columns. Here's the difference.",
-      tags: ["css", "layout", "grid"],
-      likes: 289,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-    },
-    {
-      id: "3",
-      title: "useEffect cleanup: why it matters",
-      content:
-        "Memory leaks in React components usually come from missing cleanup functions. Here's the pattern.",
-      tags: ["react", "hooks", "typescript"],
-      likes: 731,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 22).toISOString(),
-    },
-    {
-      id: "4",
-      title: "Zod schema inference for API responses",
-      content:
-        "Stop writing duplicate TypeScript interfaces. Let Zod generate your types from runtime validators.",
-      tags: ["typescript", "zod", "api"],
-      likes: 553,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    },
-  ];
-
-  const collections: MockCollection[] = [
-    {
-      id: "c1",
-      name: "React Patterns",
-      postCount: 18,
-      isPublic: true,
-      gradient: "from-blue-900/60 to-indigo-900/60",
-    },
-    {
-      id: "c2",
-      name: "CSS Tricks",
-      postCount: 11,
-      isPublic: true,
-      gradient: "from-purple-900/60 to-pink-900/60",
-    },
-    {
-      id: "c3",
-      name: "Private Notes",
-      postCount: 7,
-      isPublic: false,
-      gradient: "from-zinc-800/80 to-zinc-900/80",
-    },
-    {
-      id: "c4",
-      name: "Performance Tips",
-      postCount: 24,
-      isPublic: true,
-      gradient: "from-emerald-900/60 to-teal-900/60",
-    },
-  ];
-
-  const articles: MockArticle[] = [
-    {
-      id: "a1",
-      title: "Building a design system from scratch",
-      subtitle:
-        "A step-by-step guide to creating a cohesive component library that scales with your team and product.",
-      readingTime: 8,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-    },
-    {
-      id: "a2",
-      title: "The case for server components in 2025",
-      subtitle:
-        "React Server Components aren't just an optimization — they change how you think about data fetching entirely.",
-      readingTime: 6,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(),
-    },
-  ];
-
-  return { displayName, posts, collections, articles };
-}
-
-export function ProfilePage({ username }: { username?: string }) {
+export function ProfilePage({ username: usernameProp }: { username?: string }) {
   const navigate = useNavigate();
-  const isOwnProfile = username === "me" || username === "alexchen";
+  const { username: usernameParam } = useParams<{ username: string }>();
+  const username = usernameProp ?? usernameParam;
+
+  const { profile: currentUser } = useAuthStore();
+  const isOwnProfile =
+    username === "me" || (!!currentUser && currentUser.username === username);
+
+  const [profile, setProfile] = useState<User | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
-  const { displayName, posts, collections, articles } = buildMockData(username ?? "me");
+  useEffect(() => {
+    let cancelled = false;
 
-  const followerCount = 3_847;
-  const followingCount = 214;
+    async function load() {
+      setLoading(true);
+      try {
+        let p: User;
+        if (username === "me" || !username) {
+          if (!currentUser) return;
+          p = currentUser;
+        } else {
+          p = await profilesService.getProfile(username);
+        }
+        if (cancelled) return;
+        setProfile(p);
+
+        const [userPosts, following] = await Promise.all([
+          postsService.getUserPosts(p.id),
+          !isOwnProfile && currentUser
+            ? profilesService.isFollowing(p.id)
+            : Promise.resolve(false),
+        ]);
+        if (cancelled) return;
+        setPosts(userPosts);
+        setIsFollowing(following);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [username, currentUser, isOwnProfile]);
+
+  async function handleFollow() {
+    if (!profile || followLoading) return;
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await profilesService.unfollow(profile.id);
+        setIsFollowing(false);
+        setProfile((p) => p ? { ...p, followers_count: p.followers_count - 1 } : p);
+      } else {
+        await profilesService.follow(profile.id);
+        setIsFollowing(true);
+        setProfile((p) => p ? { ...p, followers_count: p.followers_count + 1 } : p);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFollowLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#6b6b6b]" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-[#0a0a0a]">
+        <p className="text-sm text-[#6b6b6b]">Profile not found.</p>
+      </div>
+    );
+  }
+
+  const snippetPosts = posts.filter((p) => p.type !== "article");
+  const articlePosts = posts.filter((p) => p.type === "article");
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Cover */}
-      <div className="h-32 w-full bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] relative" />
+      <div
+        className="h-32 w-full bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] relative"
+        style={profile.cover_url ? { backgroundImage: `url(${profile.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+      />
 
       {/* Profile header */}
       <div className="px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
         <div className="relative flex items-end justify-between -mt-8 mb-4">
           <Avatar
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`}
-            alt={displayName}
+            src={profile.avatar_url ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`}
+            alt={profile.display_name}
             size="xl"
             className="ring-4 ring-[#0a0a0a] bg-[#111111]"
           />
@@ -176,9 +143,10 @@ export function ProfilePage({ username }: { username?: string }) {
               </button>
             ) : (
               <button
-                onClick={() => setIsFollowing((p) => !p)}
+                onClick={handleFollow}
+                disabled={followLoading}
                 className={cn(
-                  "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors",
+                  "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
                   isFollowing
                     ? "border border-[#2e2e2e] bg-transparent text-[#a3a3a3] hover:border-red-500/50 hover:text-red-400"
                     : "bg-[#f5f5f5] text-[#0a0a0a] hover:bg-white"
@@ -193,42 +161,48 @@ export function ProfilePage({ username }: { username?: string }) {
         {/* Name + meta */}
         <div className="mb-4">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-[#f5f5f5]">{displayName}</h1>
-            <CheckCircle2 className="h-4 w-4 text-blue-400 fill-blue-400/20" />
-            <Badge variant="info">Pro</Badge>
+            <h1 className="text-xl font-bold text-[#f5f5f5]">{profile.display_name}</h1>
+            {profile.is_verified && (
+              <CheckCircle2 className="h-4 w-4 text-blue-400 fill-blue-400/20" />
+            )}
           </div>
-          <p className="text-sm text-[#6b6b6b]">@{username}</p>
+          <p className="text-sm text-[#6b6b6b]">@{profile.username}</p>
         </div>
 
-        <p className="mb-3 text-sm text-[#a3a3a3] leading-relaxed">
-          Frontend engineer obsessed with developer tooling and clean abstractions.
-          Building things at the intersection of design and code.
-        </p>
+        {profile.bio && (
+          <p className="mb-3 text-sm text-[#a3a3a3] leading-relaxed">{profile.bio}</p>
+        )}
 
         {/* Meta links */}
         <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-[#6b6b6b]">
-          <span className="flex items-center gap-1.5">
-            <MapPin className="h-3.5 w-3.5" />
-            San Francisco, CA
-          </span>
-          <a
-            href="https://example.dev"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 hover:text-[#f5f5f5] transition-colors"
-          >
-            <LinkIcon className="h-3.5 w-3.5" />
-            example.dev
-          </a>
-          <a
-            href={`https://github.com/${username}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 hover:text-[#f5f5f5] transition-colors"
-          >
-            <GitFork className="h-3.5 w-3.5" />
-            {username}
-          </a>
+          {profile.location && (
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" />
+              {profile.location}
+            </span>
+          )}
+          {profile.website && (
+            <a
+              href={profile.website}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 hover:text-[#f5f5f5] transition-colors"
+            >
+              <LinkIcon className="h-3.5 w-3.5" />
+              {profile.website.replace(/^https?:\/\//, "")}
+            </a>
+          )}
+          {profile.github_url && (
+            <a
+              href={profile.github_url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 hover:text-[#f5f5f5] transition-colors"
+            >
+              <GitFork className="h-3.5 w-3.5" />
+              {profile.github_url.replace(/^https?:\/\/(www\.)?github\.com\//, "")}
+            </a>
+          )}
         </div>
 
         {/* Follower counts */}
@@ -238,7 +212,7 @@ export function ProfilePage({ username }: { username?: string }) {
             className="flex items-baseline gap-1 text-[#a3a3a3] hover:text-[#f5f5f5] transition-colors"
           >
             <span className="font-semibold text-[#f5f5f5]">
-              {formatNumber(followerCount)}
+              {formatNumber(profile.followers_count)}
             </span>
             <span>Followers</span>
           </button>
@@ -247,7 +221,7 @@ export function ProfilePage({ username }: { username?: string }) {
             className="flex items-baseline gap-1 text-[#a3a3a3] hover:text-[#f5f5f5] transition-colors"
           >
             <span className="font-semibold text-[#f5f5f5]">
-              {formatNumber(followingCount)}
+              {formatNumber(profile.following_count)}
             </span>
             <span>Following</span>
           </button>
@@ -256,89 +230,68 @@ export function ProfilePage({ username }: { username?: string }) {
         {/* Tabs */}
         <Tabs defaultTab="posts">
           <TabList>
-            <Tab value="posts" count={posts.length}>
+            <Tab value="posts" count={snippetPosts.length}>
               Posts
             </Tab>
-            <Tab value="collections" count={collections.length}>
-              Collections
-            </Tab>
+            <Tab value="collections">Collections</Tab>
             <Tab value="likes">Likes</Tab>
-            <Tab value="articles" count={articles.length}>
+            <Tab value="articles" count={articlePosts.length}>
               Articles
             </Tab>
           </TabList>
 
           {/* Posts tab */}
           <TabPanel value="posts" className="py-4 space-y-1">
-            {posts.map((post) => (
-              <div
-                key={post.id}
-                className="group cursor-pointer rounded-xl border border-transparent px-4 py-3 transition-colors hover:border-[#2e2e2e] hover:bg-[#111111]"
-                onClick={() => navigate(`/post/${post.id}`)}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[#f5f5f5] truncate group-hover:text-white transition-colors">
-                      {post.title}
-                    </p>
-                    <p className="mt-0.5 text-sm text-[#6b6b6b] line-clamp-1">
-                      {post.content}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {post.tags.map((t) => (
-                        <TagPill key={t} label={t} />
-                      ))}
+            {snippetPosts.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-16 text-center">
+                <p className="text-sm text-[#6b6b6b]">No posts yet.</p>
+              </div>
+            ) : (
+              snippetPosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="group cursor-pointer rounded-xl border border-transparent px-4 py-3 transition-colors hover:border-[#2e2e2e] hover:bg-[#111111]"
+                  onClick={() => navigate(`/post/${post.id}`)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-[#f5f5f5] truncate group-hover:text-white transition-colors">
+                        {post.title ?? post.content.slice(0, 60)}
+                      </p>
+                      {post.content && (
+                        <p className="mt-0.5 text-sm text-[#6b6b6b] line-clamp-1">
+                          {post.content}
+                        </p>
+                      )}
+                      {post.tags.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {post.tags.map((t) => (
+                            <TagPill key={t} label={t} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-[#6b6b6b] text-sm">
+                      <Heart className="h-3.5 w-3.5" />
+                      <span>{formatNumber(post.likes_count)}</span>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1 text-[#6b6b6b] text-sm">
-                    <Heart className="h-3.5 w-3.5" />
-                    <span>{formatNumber(post.likes)}</span>
-                  </div>
+                  <p className="mt-1.5 text-xs text-[#3d3d3d]">
+                    {formatRelativeTime(post.created_at)}
+                  </p>
                 </div>
-                <p className="mt-1.5 text-xs text-[#3d3d3d]">
-                  {formatRelativeTime(post.createdAt)}
-                </p>
-              </div>
-            ))}
+              ))
+            )}
           </TabPanel>
 
           {/* Collections tab */}
-          <TabPanel value="collections" className="py-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
-              {collections.map((col) => (
-                <div
-                  key={col.id}
-                  className="group cursor-pointer overflow-hidden rounded-xl border border-[#2e2e2e] bg-[#111111] transition-colors hover:border-[#6b6b6b]"
-                  onClick={() => navigate(`/collections/${col.id}`)}
-                >
-                  <div
-                    className={cn(
-                      "h-20 bg-gradient-to-br",
-                      col.gradient
-                    )}
-                  />
-                  <div className="p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-medium text-[#f5f5f5] text-sm leading-tight">
-                        {col.name}
-                      </p>
-                      {col.isPublic ? (
-                        <Globe className="h-3.5 w-3.5 shrink-0 text-[#6b6b6b]" />
-                      ) : (
-                        <Lock className="h-3.5 w-3.5 shrink-0 text-[#6b6b6b]" />
-                      )}
-                    </div>
-                    <div className="mt-1.5 flex items-center justify-between">
-                      <span className="text-xs text-[#6b6b6b]">
-                        {col.postCount} posts
-                      </span>
-                      <Badge variant={col.isPublic ? "default" : "warning"}>
-                        {col.isPublic ? "Public" : "Private"}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          <TabPanel value="collections" className="py-16">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#111111]">
+                <Lock className="h-6 w-6 text-[#3d3d3d]" />
+              </div>
+              <p className="text-sm text-[#6b6b6b]">Collections coming soon</p>
+              <Badge variant="warning">Coming soon</Badge>
             </div>
           </TabPanel>
 
@@ -348,39 +301,43 @@ export function ProfilePage({ username }: { username?: string }) {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#111111]">
                 <Heart className="h-6 w-6 text-[#3d3d3d]" />
               </div>
-              <p className="text-sm text-[#6b6b6b]">
-                Liked posts will appear here
-              </p>
+              <p className="text-sm text-[#6b6b6b]">Liked posts will appear here</p>
               <Badge variant="warning">Coming soon</Badge>
             </div>
           </TabPanel>
 
           {/* Articles tab */}
           <TabPanel value="articles" className="py-4 space-y-3">
-            {articles.map((article) => (
-              <div
-                key={article.id}
-                className="cursor-pointer rounded-xl border border-[#2e2e2e] bg-[#111111] p-4 transition-colors hover:border-[#6b6b6b]"
-                onClick={() => navigate(`/articles/${article.id}`)}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[#f5f5f5] leading-snug">
-                      {article.title}
-                    </p>
-                    <p className="mt-1 text-sm text-[#6b6b6b] line-clamp-2">
-                      {article.subtitle}
-                    </p>
-                  </div>
-                  <Bookmark className="h-4 w-4 shrink-0 text-[#3d3d3d]" />
-                </div>
-                <div className="mt-3 flex items-center gap-3 text-xs text-[#3d3d3d]">
-                  <span>{article.readingTime} min read</span>
-                  <span>·</span>
-                  <span>{formatRelativeTime(article.createdAt)}</span>
-                </div>
+            {articlePosts.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-16 text-center">
+                <p className="text-sm text-[#6b6b6b]">No articles yet.</p>
               </div>
-            ))}
+            ) : (
+              articlePosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="cursor-pointer rounded-xl border border-[#2e2e2e] bg-[#111111] p-4 transition-colors hover:border-[#6b6b6b]"
+                  onClick={() => navigate(`/post/${post.id}`)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-[#f5f5f5] leading-snug">
+                        {post.title}
+                      </p>
+                      {post.content && (
+                        <p className="mt-1 text-sm text-[#6b6b6b] line-clamp-2">
+                          {post.content}
+                        </p>
+                      )}
+                    </div>
+                    <Bookmark className="h-4 w-4 shrink-0 text-[#3d3d3d]" />
+                  </div>
+                  <div className="mt-3 flex items-center gap-3 text-xs text-[#3d3d3d]">
+                    <span>{formatRelativeTime(post.created_at)}</span>
+                  </div>
+                </div>
+              ))
+            )}
           </TabPanel>
         </Tabs>
       </div>
